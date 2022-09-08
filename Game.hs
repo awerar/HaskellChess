@@ -14,7 +14,7 @@ main = stepGame $ GameState startBoard White
 
 stepGame :: GameState -> IO()
 stepGame gameState = do
-    putStrLn $ displayBoard $ currBoard gameState
+    putStrLn $ displayGameState gameState
 
     newGameState <- getNewGameState gameState
 

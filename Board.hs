@@ -32,14 +32,14 @@ startBoard :: Board
 startBoard = startBoardCR
 
 squareAt :: Board -> Position -> Square
-squareAt board (c, r) = (board !! c) !! r
+squareAt board (Position (c, r)) = (board !! c) !! r
 
 pieceAtSquare :: Square -> Maybe Piece
 pieceAtSquare Empty = Nothing
 pieceAtSquare (Occupied piece) = Just piece
 
 replaceSquare :: Board -> Position -> Square -> Board
-replaceSquare board (c, r) square = replaceElement board c (replaceElement (board !! c) r square)
+replaceSquare board (Position (c, r)) square = replaceElement board c (replaceElement (board !! c) r square)
 
 replaceElement :: [a] -> Int -> a -> [a]
 replaceElement [] _ _ = error "Index not in list"

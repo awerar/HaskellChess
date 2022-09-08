@@ -8,6 +8,7 @@ import Board
 import Move
 import Piece
 import Data.Maybe
+import Position
 
 data GameState = GameState { currBoard :: Board, currPlayer :: Color }
 
@@ -23,15 +24,16 @@ getNewGameState gameState = do
         else do
             return $ fromJust newGameState
 
-applyMove :: GameState -> Move -> Maybe GameState
+applyMove :: GameState -> BoardMove -> Maybe GameState
 applyMove (GameState board player) move
     | isNothing piece = Nothing
     | not $ pieceHasColor (fromJust piece) player = Nothing
     | isNothing pieceMover = Nothing
+    | isNothing newBoard = Nothing
     | otherwise = Just $ GameState (fromJust newBoard) (otherColor player)
     where
         piece :: Maybe Piece
-        piece = pieceAtSquare $ squareAt board $ fst move
+        piece = pieceAtSquare $ squareAt board $ fst $ moveAsPair move
 
         pieceMover :: Maybe PieceMover
         pieceMover = fmap getPieceMover piece

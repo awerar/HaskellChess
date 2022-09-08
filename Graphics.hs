@@ -1,10 +1,16 @@
 module Graphics(
-    displayBoard
+    displayBoard, displayGameState
 ) where
 
 import Board
 import Piece
 import Data.Char (chr, ord)
+import Position
+import GameState
+
+displayGameState :: GameState -> String
+displayGameState (GameState board Black) = displayBoard board
+displayGameState (GameState board White) = unlines $ reverse $ lines $ displayBoard board
 
 displayBoard :: Board -> String
 displayBoard board = unlines $ [coordinateRow] ++ displayRows 0 ++ [coordinateRow]
@@ -16,8 +22,8 @@ displayBoard board = unlines $ [coordinateRow] ++ displayRows 0 ++ [coordinateRo
         displayRows r = (show (r+1) ++ displayRow 0 r ++ " " ++ show (r+1)) : displayRows (r + 1)
 
         displayRow :: Int -> Int -> String
-        displayRow 7 r = [displaySquare $ squareAt board (7, r)]
-        displayRow c r = displaySquare (squareAt board (c, r)) : ' ' : displayRow (c+1) r
+        displayRow 7 r = [displaySquare $ squareAt board (Position (7, r))]
+        displayRow c r = displaySquare (squareAt board (Position (c, r))) : ' ' : displayRow (c+1) r
 
 displaySquare :: Square -> Char
 displaySquare Empty = ' '
