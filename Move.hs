@@ -38,19 +38,15 @@ mergeMovers (mover:movers) board move = if isNothing newBoard then mergeMovers m
         newBoard = mover board move
 
 moveRook :: OffsetPieceMover
-moveRook = mergeMovers [
-        moveDirection (Offset (0, 1)) 8,
-        moveDirection (Offset (0, -1)) 8,
-        moveDirection (Offset (1, 0)) 8,
-        moveDirection (Offset (-1, 0)) 8
-    ]
+moveRook = mergeMovers $ map (moveDirection 8) (offsetRotations (Offset (1, 0)))
 
-moveDirection :: Offset -> Int -> OffsetPieceMover
-moveDirection (Offset (sx, sy)) dist board (OffsetMove (Position (x1, y1), Offset (dx, dy)))
+moveDirection :: Int -> Offset -> OffsetPieceMover
+moveDirection dist (Offset (sx, sy)) board (OffsetMove (Position (x1, y1), Offset (dx, dy)))
     | sx == 0 && sy == 0 = error "Can't move in no direction"
     | not (validStep sx dx) = Nothing
     | not (validStep sy dy) = Nothing
     | sx /= 0 && sy /= 0 && (distX /= distY || max distX distY > dist) = Nothing
+    | or [isJust (pieceAtSquare (squareAt board p)) | p <- [Position (x1 + sx * d, y1 + sx * d) | d <- [1..(max distX distY)]]] = Nothing
     | otherwise = simplyMovePieceOffset board (OffsetMove (Position (x1, y1), Offset (dx, dy)))
     where
         distX = if sx == 0 then 0 else dx `div` sx
