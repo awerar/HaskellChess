@@ -4,24 +4,24 @@ module Position(
 
 import Data.Char (chr, ord)
 
-newtype Position = Position (Int, Int)
-newtype Offset = Offset (Int, Int) deriving Show
+data Position = Position Int Int
+data Offset = Offset Int Int deriving Show
 
 posAsPair :: Position -> (Int, Int)
-posAsPair (Position p) = p
+posAsPair (Position x y) = (x, y)
 
 offsetFrom :: Position -> Position -> Offset
-offsetFrom (Position (x1, y1)) (Position (x2, y2)) = Offset (x2 - x1, y2 - y1)
+offsetFrom (Position x1 y1) (Position x2 y2) = Offset (x2 - x1) (y2 - y1)
 
 addOffset :: Position -> Offset -> Position
-addOffset (Position (x, y)) (Offset (dx, dy)) = Position (x + dx, y + dy)
+addOffset (Position x y) (Offset dx dy) = Position (x + dx) (y + dy)
 
 offsetRotations :: Offset -> [Offset]
-offsetRotations (Offset (0, 0)) = [Offset (0, 0)]
-offsetRotations (Offset (dx, dy)) = [Offset (dx, dy), Offset (dy, -dx), Offset (-dx, -dy), Offset (-dy, dx)]
+offsetRotations (Offset 0 0) = [Offset 0 0]
+offsetRotations (Offset dx dy) = [Offset dx dy, Offset dy (-dx), Offset (-dx) (-dy), Offset (-dy) dx]
 
 validPosition :: Position -> Bool
-validPosition (Position (c, r)) = not (c < 0 || c >= 8 || r < 0 || r >= 8)
+validPosition (Position c r) = not (c < 0 || c >= 8 || r < 0 || r >= 8)
 
 parsePosition :: Char -> Char -> Position
-parsePosition cc rc = Position (ord cc - ord 'a', ord rc - ord '1')
+parsePosition cc rc = Position (ord cc - ord 'a') (ord rc - ord '1')
