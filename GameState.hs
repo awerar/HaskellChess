@@ -25,21 +25,31 @@ getNewGameState gameState = do
             return $ fromJust newGameState
 
 applyMove :: GameState -> BoardMove -> Maybe GameState
-applyMove (GameState board player) move
-    | isNothing piece = Nothing
-    | not $ pieceHasColor (fromJust piece) player = Nothing
-    | isNothing pieceMover = Nothing
-    | isNothing newBoard = Nothing
-    | otherwise = Just $ GameState (fromJust newBoard) (otherColor player)
-    where
-        piece :: Maybe Piece
-        piece = pieceAtSquare $ squareAt board $ fst $ moveAsPair move
+applyMove (GameState board player) move = do
+    piece <- pieceAtSquare $ squareAt board $ fst $ moveAsPair move
+    if pieceHasColor piece player then do
+        let pieceMover = getPieceMover piece
+        newBoard <- pieceMover board move
+        return $ GameState newBoard (otherColor player)
+    else Nothing
 
-        pieceMover :: Maybe PieceMover
-        pieceMover = fmap getPieceMover piece
+        
 
-        newBoard :: Maybe Board
-        newBoard = maybe Nothing (\mover -> mover board move) pieceMover
+-- applyMove (GameState board player) move
+--     | isNothing piece = Nothing
+--     | not $ pieceHasColor (fromJust piece) player = Nothing
+--     | isNothing pieceMover = Nothing
+--     | isNothing newBoard = Nothing
+--     | otherwise = Just $ GameState (fromJust newBoard) (otherColor player)
+--     where
+--         piece :: Maybe Piece
+--         piece = pieceAtSquare $ squareAt board $ fst $ moveAsPair move
+
+--         pieceMover :: Maybe PieceMover
+--         pieceMover = fmap getPieceMover piece
+
+--         newBoard :: Maybe Board
+--         newBoard = maybe Nothing (\mover -> mover board move) pieceMover
 
 gameOver :: GameState -> Bool
 gameOver board = False
