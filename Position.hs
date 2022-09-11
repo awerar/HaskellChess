@@ -4,8 +4,8 @@ module Position(
 
 import Data.Char (chr, ord)
 
-data Position = Position Int Int
-data Offset = Offset Int Int deriving Show
+data Position = Position Int Int deriving Eq
+data Offset = Offset Int Int deriving (Show, Eq)
 
 posAsPair :: Position -> (Int, Int)
 posAsPair (Position x y) = (x, y)

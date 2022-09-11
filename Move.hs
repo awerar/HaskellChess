@@ -10,6 +10,9 @@ import Piece
 import GameState
 
 type Move = (Position, Position)
+type PieceMover = Move -> Board -> Board
+type MoveValidator = Move -> Board -> Bool
+
 applyMove :: GameState -> Move -> Maybe GameState
 applyMove (GameState board currPlayer) (p1, p2) = do
     piece <- pieceAt board p1
@@ -17,25 +20,40 @@ applyMove (GameState board currPlayer) (p1, p2) = do
     let color = case piece of (Piece c _) -> c
     if color /= currPlayer then Nothing
     else do
-        newBoard <- do 
+        newBoard <- do
             let piece2 = pieceAt board p2
-            mover <- case (piece, piece2) of 
-                    (Piece _ pt, Nothing) -> return (movePiece pt)
+            mover <- case (piece, piece2) of
+                    (Piece _ pt, Nothing) -> let
+                        validator = case pt of
+                            Rook -> moveValidForRook
+                            _ -> (\_ _ -> False)
+                        in (if validator (p1, p2) board then return movePiece else Nothing)
                     (_, Just _) -> Nothing
 
-            mover board p1 p2
+            return $ mover (p1, p2) board
 
         return $ GameState newBoard (otherColor currPlayer)
 
-type PieceMover = Board -> Position -> Position -> Maybe Board
-movePiece :: PieceType -> PieceMover
-movePiece pt = simplyMovePiece
+        
 
-simplyMovePiece :: PieceMover
-simplyMovePiece board p1 p2 = Just board2
-        where
-            board1 = replaceSquare board p1 Nothing
-            board2 = replaceSquare board1 p2 $ pieceAt board p1
+moveValidForRook :: MoveValidator
+moveValidForRook board move = any (\delta -> destinationIsOnLine delta board move) (offsetRotations (Offset 1 0))
+
+destinationIsOnLine :: Offset -> MoveValidator
+destinationIsOnLine delta (p1, p2) board
+    | not $ validPosition p1 = False
+    | p1 == p2 = True
+    | isJust (pieceAt board p1) = False
+    | otherwise = destinationIsOnLine delta (addOffset p1 delta, p2) board
+
+movePiece :: PieceMover
+movePiece (p1, p2) board
+    | isNothing (pieceAt board p1) = error "Trying to move an empty piece"
+    | isJust (pieceAt board p2) = error "Trying to move an occupied square"
+    | otherwise = let
+        removedBoard = replaceSquare board p1 Nothing
+        piece = pieceAt board p1
+        in replaceSquare removedBoard p2 piece
 
 getMove :: IO Move
 getMove = do
