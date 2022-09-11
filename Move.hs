@@ -1,5 +1,5 @@
 module Move(
-    BoardMove, PieceMover, getMove, simplyMovePiece, getPieceMover, moveAsPair
+    getMove, applyMove, Move
 ) where
 
 import Position
@@ -8,63 +8,26 @@ import Data.Maybe
 import Board
 import Piece
 
-type PieceMover = Board -> BoardMove -> Maybe Board
-type OffsetPieceMover = Board -> OffsetMove -> Maybe Board
+type Move = (Position, Position)
+applyMove :: Board -> Move -> Maybe Board
+applyMove board (p1, p2) = do
+    piece <- pieceAt board p1
+    case pieceAt board p2 of
+        Just _ -> Nothing
+        Nothing -> do
+            simplyMovePiece board p1 p2
 
-newtype BoardMove = BoardMove (Position, Position)
-newtype OffsetMove = OffsetMove (Position, Offset)
-
-getPieceMover :: Piece -> PieceMover
-getPieceMover (Piece _ Rook) = validateMover $ positionMoverFromOffsetMover moveRook
-getPieceMover (Piece _ _) = validateMover simplyMovePiece
-
-moveAsPair :: BoardMove -> (Position, Position)
-moveAsPair (BoardMove p) = p
-
-positionMoverFromOffsetMover :: OffsetPieceMover -> PieceMover
-positionMoverFromOffsetMover mover board (BoardMove (p1, p2)) = mover board (OffsetMove (p1, offsetFrom p1 p2))
-
-validateMover :: PieceMover -> PieceMover
-validateMover mover board (BoardMove (p1, p2))
-    | squareAt board p1 == Empty = Nothing
-    | squareAt board p2 /= Empty = Nothing
-    | otherwise = mover board $ BoardMove (p1, p2)
-
-mergeMovers :: [Board -> m -> Maybe Board] -> (Board -> m -> Maybe Board)
-mergeMovers [] board move = Nothing
-mergeMovers (mover:movers) board move = if isNothing newBoard then mergeMovers movers board move else newBoard
-    where
-        newBoard :: Maybe Board
-        newBoard = mover board move
-
-moveRook :: OffsetPieceMover
-moveRook = mergeMovers $ map (moveDirection 8) (offsetRotations (Offset 1 0))
-
-moveDirection :: Int -> Offset -> OffsetPieceMover
-moveDirection dist (Offset sx sy) board (OffsetMove (Position x1 y1, Offset dx dy))
-    | sx == 0 && sy == 0 = error "Can't move in no direction"
-    | not (validStep sx dx) = Nothing
-    | not (validStep sy dy) = Nothing
-    | sx /= 0 && sy /= 0 && (distX /= distY || max distX distY > dist) = Nothing
-    | or [isJust (pieceAtSquare (squareAt board p)) | p <- [Position (x1 + sx * d) (y1 + sx * d) | d <- [1..(max distX distY)]]] = Nothing
-    | otherwise = simplyMovePieceOffset board (OffsetMove (Position x1 y1, Offset dx dy))
-    where
-        distX = if sx == 0 then 0 else dx `div` sx
-        distY = if sy == 0 then 0 else dy `div` sy
-
-        validStep :: Int -> Int -> Bool
-        validStep sk dk = (sk == 0 && dk == 0) || (sk /= 0 && dk `mod` sk == 0)
+type PieceMover = Board -> Position -> Position -> Maybe Board
+moveRook :: PieceMover
+moveRook = undefined
 
 simplyMovePiece :: PieceMover
-simplyMovePiece board (BoardMove (p1, p2)) = Just board2
+simplyMovePiece board p1 p2 = Just board2
         where
-            board1 = replaceSquare board p1 Empty
-            board2 = replaceSquare board1 p2 $ squareAt board p1
+            board1 = replaceSquare board p1 Nothing
+            board2 = replaceSquare board1 p2 $ pieceAt board p1
 
-simplyMovePieceOffset :: OffsetPieceMover
-simplyMovePieceOffset board (OffsetMove (pos, delta)) = simplyMovePiece board (BoardMove (pos, addOffset pos delta))
-
-getMove :: IO BoardMove
+getMove :: IO Move
 getMove = do
     putChar '?'
     hFlush stdout
@@ -76,7 +39,7 @@ getMove = do
             getMove
         else do return (fromJust move)
 
-readMove :: IO (Maybe BoardMove)
+readMove :: IO (Maybe Move)
 readMove = do
     line <- getLine
     if length line /= 4 then return Nothing
@@ -84,4 +47,4 @@ readMove = do
         let p1 = parsePosition (head line) (line !! 1)
         let p2 = parsePosition (line !! 2) (line !! 3)
 
-        return $ if validPosition p1 && validPosition p2 then Just (BoardMove (p1, p2)) else Nothing
+        return $ if validPosition p1 && validPosition p2 then Just (p1, p2) else Nothing

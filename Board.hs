@@ -1,28 +1,22 @@
 module Board (
-    Board, Square(..), startBoard, squareAt, replaceSquare, pieceAtSquare
+    Board, startBoard, pieceAt, replaceSquare
 ) where
 
 import Piece
 import Position
 
-data Square = Occupied Piece | Empty deriving Show
-type Board = [[Square]]
-
-instance Eq Square where
-    Empty == Empty = True
-    Occupied p1 == Occupied p2 = p1 == p2
-    s1 == s2 = False
+type Board = [[Maybe Piece]]
 
 startBoardRC :: Board
 startBoardRC = reverse $
     [
-        map (Occupied . Piece Black) [Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook],
-        replicate 8 $ Occupied $ Piece Black Pawn
+        map (Just . Piece Black) [Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook],
+        replicate 8 $ Just $ Piece Black Pawn
     ] ++
-    replicate 4 (replicate 8 Empty) ++
+    replicate 4 (replicate 8 Nothing) ++
     [
-        replicate 8 $ Occupied $ Piece White Pawn,
-        map (Occupied . Piece White) [Rook, Knight, Bishop, King, Queen, Bishop, Knight, Rook]
+        replicate 8 $ Just $ Piece White Pawn,
+        map (Just . Piece White) [Rook, Knight, Bishop, King, Queen, Bishop, Knight, Rook]
     ]
 
 startBoardCR :: Board
@@ -31,14 +25,10 @@ startBoardCR = [[startBoardRC !! r !! c | r <- [0..7]] | c <- [0..7]]
 startBoard :: Board
 startBoard = startBoardCR
 
-squareAt :: Board -> Position -> Square
-squareAt board (Position c r) = (board !! c) !! r
+pieceAt :: Board -> Position -> Maybe Piece
+pieceAt board (Position c r) = (board !! c) !! r
 
-pieceAtSquare :: Square -> Maybe Piece
-pieceAtSquare Empty = Nothing
-pieceAtSquare (Occupied piece) = Just piece
-
-replaceSquare :: Board -> Position -> Square -> Board
+replaceSquare :: Board -> Position -> Maybe Piece -> Board
 replaceSquare board (Position c r) square = replaceElement board c (replaceElement (board !! c) r square)
 
 replaceElement :: [a] -> Int -> a -> [a]
