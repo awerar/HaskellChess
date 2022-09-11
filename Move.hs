@@ -7,19 +7,29 @@ import System.IO
 import Data.Maybe
 import Board
 import Piece
+import GameState
 
 type Move = (Position, Position)
-applyMove :: Board -> Move -> Maybe Board
-applyMove board (p1, p2) = do
+applyMove :: GameState -> Move -> Maybe GameState
+applyMove (GameState board currPlayer) (p1, p2) = do
     piece <- pieceAt board p1
-    case pieceAt board p2 of
-        Just _ -> Nothing
-        Nothing -> do
-            simplyMovePiece board p1 p2
+
+    let color = case piece of (Piece c _) -> c
+    if color /= currPlayer then Nothing
+    else do
+        newBoard <- do 
+            let piece2 = pieceAt board p2
+            mover <- case (piece, piece2) of 
+                    (Piece _ pt, Nothing) -> return (movePiece pt)
+                    (_, Just _) -> Nothing
+
+            mover board p1 p2
+
+        return $ GameState newBoard (otherColor currPlayer)
 
 type PieceMover = Board -> Position -> Position -> Maybe Board
-moveRook :: PieceMover
-moveRook = undefined
+movePiece :: PieceType -> PieceMover
+movePiece pt = simplyMovePiece
 
 simplyMovePiece :: PieceMover
 simplyMovePiece board p1 p2 = Just board2

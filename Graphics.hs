@@ -22,12 +22,12 @@ displayBoard board = unlines $ [coordinateRow] ++ displayRows 0 ++ [coordinateRo
         displayRows r = (show (r+1) ++ displayRow 0 r ++ " " ++ show (r+1)) : displayRows (r + 1)
 
         displayRow :: Int -> Int -> String
-        displayRow 7 r = [displaySquare $ squareAt board (Position 7 r)]
-        displayRow c r = displaySquare (squareAt board (Position c r)) : ' ' : displayRow (c+1) r
+        displayRow 7 r = [displaySquare $ pieceAt board (Position 7 r)]
+        displayRow c r = displaySquare (pieceAt board (Position c r)) : ' ' : displayRow (c+1) r
 
-displaySquare :: Square -> Char
-displaySquare Empty = ' '
-displaySquare (Occupied piece) = displayPiece piece
+displaySquare :: Maybe Piece -> Char
+displaySquare Nothing = ' '
+displaySquare (Just piece) = displayPiece piece
 
 displayPiece :: Piece -> Char
 displayPiece (Piece c t) = chr $ pieceTypeUnicode t + (if c == White then 0 else 6)

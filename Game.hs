@@ -20,3 +20,15 @@ stepGame gameState = do
 
     unless (gameOver newGameState) $ do
         stepGame newGameState
+
+getNewGameState :: GameState -> IO GameState
+getNewGameState gameState = do
+    move <- getMove
+
+    let newGameState = applyMove gameState move
+    if isNothing newGameState
+        then do
+            putStrLn "Invalid move, try again"
+            getNewGameState gameState
+        else do
+            return $ fromJust newGameState
