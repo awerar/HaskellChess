@@ -15,36 +15,55 @@ type MoveValidator = Move -> Board -> Bool
 
 applyMove :: GameState -> Move -> Maybe GameState
 applyMove (GameState board currPlayer) (p1, p2) = do
-    piece <- pieceAt board p1
-
-    let color = case piece of (Piece c _) -> c
-    if color /= currPlayer then Nothing
+    if p1 == p2 then Nothing
     else do
-        newBoard <- do
-            let piece2 = pieceAt board p2
-            mover <- case (piece, piece2) of
-                    (Piece _ pt, Nothing) -> let
+        piece <- pieceAt board p1
+
+        let color = case piece of (Piece c _) -> c
+        if color /= currPlayer then Nothing
+        else do
+            newBoard <- do
+                let piece2 = pieceAt board p2
+                mover <- getMover piece piece2
+
+                return $ mover (p1, p2) board
+
+            return $ GameState newBoard (otherColor currPlayer)
+
+    where
+        getMover :: Piece -> Maybe Piece -> Maybe PieceMover
+        getMover piece1 piece2 =
+            case (piece1, piece2) of
+                (Piece _ pt, Nothing) -> getMoveMover pt
+                (_, Just _) -> Nothing
+
+            where
+                getMoveMover :: PieceType -> Maybe PieceMover
+                getMoveMover pt = if validator (p1, p2) board then return movePiece else Nothing
+                    where
+                        validator :: MoveValidator
                         validator = case pt of
                             Rook -> moveValidForRook
+                            Bishop -> moveValidForBishop
+                            Knight -> moveValidForKnight
                             _ -> (\_ _ -> False)
-                        in (if validator (p1, p2) board then return movePiece else Nothing)
-                    (_, Just _) -> Nothing
-
-            return $ mover (p1, p2) board
-
-        return $ GameState newBoard (otherColor currPlayer)
-
-        
 
 moveValidForRook :: MoveValidator
-moveValidForRook board move = any (\delta -> destinationIsOnLine delta board move) (offsetRotations (Offset 1 0))
+moveValidForRook move board = any (\delta -> destinationIsOnLine delta 8 move board) (offsetRotations (Offset 1 0))
 
-destinationIsOnLine :: Offset -> MoveValidator
-destinationIsOnLine delta (p1, p2) board
+moveValidForBishop :: MoveValidator
+moveValidForBishop move board = any (\delta -> destinationIsOnLine delta 8 move board) (offsetRotations (Offset 1 1))
+
+moveValidForKnight :: MoveValidator
+moveValidForKnight move board = any (\delta -> destinationIsOnLine delta 1 move board) (offsetRotations (Offset 1 2) ++ offsetRotations (Offset 2 1))
+
+destinationIsOnLine :: Offset -> Int -> MoveValidator
+destinationIsOnLine delta dist (p1, p2) board
     | not $ validPosition p1 = False
     | p1 == p2 = True
+    | dist == 0 = False
     | isJust (pieceAt board p1) = False
-    | otherwise = destinationIsOnLine delta (addOffset p1 delta, p2) board
+    | otherwise = destinationIsOnLine delta (dist - 1) (addOffset p1 delta, p2) board
 
 movePiece :: PieceMover
 movePiece (p1, p2) board
