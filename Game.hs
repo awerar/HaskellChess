@@ -30,5 +30,4 @@ getNewGameState gameState = do
         then do
             putStrLn "Invalid move, try again"
             getNewGameState gameState
-        else do
-            return $ fromJust newGameState
+        else return $ fromJust newGameState

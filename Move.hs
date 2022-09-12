@@ -14,7 +14,7 @@ type PieceMover = Move -> Board -> Board
 type MoveValidator = Move -> Board -> Bool
 
 applyMove :: GameState -> Move -> Maybe GameState
-applyMove (GameState board currPlayer) (p1, p2) = do
+applyMove (GameState board currPlayer) (p1, p2) =
     if p1 == p2 then Nothing
     else do
         piece <- pieceAt board p1
@@ -34,36 +34,50 @@ applyMove (GameState board currPlayer) (p1, p2) = do
         getMover :: Piece -> Maybe Piece -> Maybe PieceMover
         getMover piece1 piece2 =
             case (piece1, piece2) of
-                (Piece _ pt, Nothing) -> getMoveMover pt
+                (Piece c pt, Nothing) -> getMoveMover c pt
                 (_, Just _) -> Nothing
 
             where
-                getMoveMover :: PieceType -> Maybe PieceMover
-                getMoveMover pt = if validator (p1, p2) board then return movePiece else Nothing
+                getMoveMover :: Color -> PieceType -> Maybe PieceMover
+                getMoveMover c pt = if validator (p1, p2) board then return movePiece else Nothing
                     where
                         validator :: MoveValidator
                         validator = case pt of
                             Rook -> moveValidForRook
                             Bishop -> moveValidForBishop
                             Knight -> moveValidForKnight
+                            Pawn -> moveValidForPawn c
                             _ -> (\_ _ -> False)
 
 moveValidForRook :: MoveValidator
-moveValidForRook move board = any (\delta -> destinationIsOnLine delta 8 move board) (offsetRotations (Offset 1 0))
+moveValidForRook move board = any (\delta -> destinationOnRay delta move board) (offsetRotations (Offset 1 0))
 
 moveValidForBishop :: MoveValidator
-moveValidForBishop move board = any (\delta -> destinationIsOnLine delta 8 move board) (offsetRotations (Offset 1 1))
+moveValidForBishop move board = any (\delta -> destinationOnRay delta move board) (offsetRotations (Offset 1 1))
 
 moveValidForKnight :: MoveValidator
-moveValidForKnight move board = any (\delta -> destinationIsOnLine delta 1 move board) (offsetRotations (Offset 1 2) ++ offsetRotations (Offset 2 1))
+moveValidForKnight move board = any (\delta -> destinationOnOffset delta move) (offsetRotations (Offset 1 2) ++ offsetRotations (Offset 2 1))
 
-destinationIsOnLine :: Offset -> Int -> MoveValidator
-destinationIsOnLine delta dist (p1, p2) board
+moveValidForPawn :: Color -> MoveValidator
+moveValidForPawn owner move _ = destinationOnOffset offset move
+    where
+        offset = case owner of
+            White -> Offset 0 1
+            Black -> Offset 0 (-1)
+
+destinationOnOffset :: Offset -> Move -> Bool
+destinationOnOffset offset (p1, p2) = offset == (offsetFrom p1 p2)
+
+destinationOnRay :: Offset -> MoveValidator
+destinationOnRay delta move board = destinationIsOnLine delta (fst move) 8 move board
+
+destinationIsOnLine :: Offset -> Position -> Int -> MoveValidator
+destinationIsOnLine delta curr dist (p1, p2) board
     | not $ validPosition p1 = False
-    | p1 == p2 = True
+    | curr == p2 = True
     | dist == 0 = False
-    | isJust (pieceAt board p1) = False
-    | otherwise = destinationIsOnLine delta (dist - 1) (addOffset p1 delta, p2) board
+    | isJust (pieceAt board p1) && curr /= p1 = False
+    | otherwise = destinationIsOnLine delta (addOffset curr delta) (dist - 1) (p1, p2) board
 
 movePiece :: PieceMover
 movePiece (p1, p2) board
@@ -84,7 +98,7 @@ getMove = do
         then do
             putStrLn "Badly formatted move, try again"
             getMove
-        else do return (fromJust move)
+        else return (fromJust move)
 
 readMove :: IO (Maybe Move)
 readMove = do
