@@ -7,7 +7,7 @@ import Piece
 import Data.Maybe
 import Position
 
-data GameState = GameState { currBoard :: Board, currPlayer :: Color }
+data GameState = GameState { currBoard :: Board, currPlayer :: Color, currTurn :: Int }
 
 gameOver :: GameState -> Bool
 gameOver board = False

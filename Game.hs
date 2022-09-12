@@ -10,7 +10,7 @@ import Data.Maybe
 import GameState
 
 main :: IO()
-main = stepGame $ GameState startBoard White
+main = stepGame $ GameState startBoard White 1
 
 stepGame :: GameState -> IO()
 stepGame gameState = do

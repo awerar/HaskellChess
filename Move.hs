@@ -14,13 +14,12 @@ type PieceMover = Move -> Board -> Board
 type MoveValidator = Move -> Board -> Bool
 
 applyMove :: GameState -> Move -> Maybe GameState
-applyMove (GameState board currPlayer) (p1, p2) =
+applyMove (GameState board currPlayer turn) (p1, p2) =
     if p1 == p2 then Nothing
     else do
         piece <- pieceAt board p1
 
-        let color = case piece of (Piece c _) -> c
-        if color /= currPlayer then Nothing
+        if not (pieceHasColor piece currPlayer) then Nothing
         else do
             newBoard <- do
                 let piece2 = pieceAt board p2
@@ -28,13 +27,13 @@ applyMove (GameState board currPlayer) (p1, p2) =
 
                 return $ mover (p1, p2) board
 
-            return $ GameState newBoard (otherColor currPlayer)
+            return $ GameState newBoard (otherColor currPlayer) (turn + 1)
 
     where
         getMover :: Piece -> Maybe Piece -> Maybe PieceMover
         getMover piece1 piece2 =
             case (piece1, piece2) of
-                (Piece c pt, Nothing) -> getMoveMover c pt
+                (Piece c pt _, Nothing) -> getMoveMover c pt
                 (_, Just _) -> Nothing
 
             where

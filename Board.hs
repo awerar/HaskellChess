@@ -10,13 +10,13 @@ type Board = [[Maybe Piece]]
 startBoardRC :: Board
 startBoardRC = reverse $
     [
-        map (Just . Piece Black) [Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook],
-        replicate 8 $ Just $ Piece Black Pawn
+        map (\x -> Just $ Piece Black x Nothing) [Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook],
+        replicate 8 $ Just $ Piece Black Pawn Nothing
     ] ++
     replicate 4 (replicate 8 Nothing) ++
     [
-        replicate 8 $ Just $ Piece White Pawn,
-        map (Just . Piece White) [Rook, Knight, Bishop, King, Queen, Bishop, Knight, Rook]
+        replicate 8 $ Just $ Piece White Pawn Nothing,
+        map (\x -> Just $ Piece White x Nothing) [Rook, Knight, Bishop, King, Queen, Bishop, Knight, Rook]
     ]
 
 startBoardCR :: Board
