@@ -13,3 +13,5 @@ otherColor Black = White
 pieceHasColor :: Piece -> Color -> Bool
 pieceHasColor (Piece c1 _ _) c2 = c1 == c2
 
+updatePieceTurn :: Piece -> Turn -> Piece
+updatePieceTurn (Piece a b _) t = Piece a b t

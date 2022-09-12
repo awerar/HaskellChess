@@ -33,19 +33,19 @@ applyMove (GameState board currPlayer turn) (p1, p2) =
         getMover :: Piece -> Maybe Piece -> Maybe PieceMover
         getMover piece1 piece2 =
             case (piece1, piece2) of
-                (Piece c pt _, Nothing) -> getMoveMover c pt
+                (Piece c pt lm, Nothing) -> getMoveMover c pt lm
                 (_, Just _) -> Nothing
 
             where
-                getMoveMover :: Color -> PieceType -> Maybe PieceMover
-                getMoveMover c pt = if validator (p1, p2) board turn then return movePiece else Nothing
+                getMoveMover :: Color -> PieceType -> Maybe Int -> Maybe PieceMover
+                getMoveMover c pt lm = if validator (p1, p2) board turn then return movePiece else Nothing
                     where
                         validator :: MoveValidator
                         validator = case pt of
                             Rook -> moveValidForRook
                             Bishop -> moveValidForBishop
                             Knight -> moveValidForKnight
-                            Pawn -> moveValidForPawn c
+                            Pawn -> moveValidForPawn c lm
                             _ -> (\_ _ _ -> False)
 
 moveValidForRook :: MoveValidator
@@ -57,9 +57,10 @@ moveValidForBishop move board turn = any (\delta -> destinationOnRay delta move 
 moveValidForKnight :: MoveValidator
 moveValidForKnight move board turn = any (\delta -> destinationOnOffset delta move) (offsetRotations (Offset 1 2) ++ offsetRotations (Offset 2 1))
 
-moveValidForPawn :: Color -> MoveValidator
-moveValidForPawn owner move _ _ = destinationOnOffset offset move
+moveValidForPawn :: Color -> Maybe Int -> MoveValidator
+moveValidForPawn owner lastMoved move board _ = destinationIsOnLine offset (fst move) dist move board
     where
+        dist = if lastMoved == Nothing then 2 else 1
         offset = case owner of
             White -> Offset 0 1
             Black -> Offset 0 (-1)
@@ -79,12 +80,12 @@ destinationIsOnLine delta curr dist (p1, p2) board
     | otherwise = destinationIsOnLine delta (addOffset curr delta) (dist - 1) (p1, p2) board
 
 movePiece :: PieceMover
-movePiece (p1, p2) board _
+movePiece (p1, p2) board turn
     | isNothing (pieceAt board p1) = error "Trying to move an empty piece"
     | isJust (pieceAt board p2) = error "Trying to move an occupied square"
     | otherwise = let
         removedBoard = replaceSquare board p1 Nothing
-        piece = pieceAt board p1
+        piece = updatePieceTurn (pieceAt board p1) turn
         in replaceSquare removedBoard p2 piece
 
 getMove :: IO Move
