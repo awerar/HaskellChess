@@ -49,10 +49,10 @@ applyMove (GameState board currPlayer turn) (p1, p2) =
                             _ -> (\_ _ _ -> False)
 
 moveValidForRook :: MoveValidator
-moveValidForRook move board turn = any (\delta -> destinationOnRay delta move board turn) (offsetRotations (Offset 1 0))
+moveValidForRook move board turn = any (\delta -> destinationOnRay delta move board) (offsetRotations (Offset 1 0))
 
 moveValidForBishop :: MoveValidator
-moveValidForBishop move board turn = any (\delta -> destinationOnRay delta move board turn) (offsetRotations (Offset 1 1))
+moveValidForBishop move board turn = any (\delta -> destinationOnRay delta move board) (offsetRotations (Offset 1 1))
 
 moveValidForKnight :: MoveValidator
 moveValidForKnight move board turn = any (\delta -> destinationOnOffset delta move) (offsetRotations (Offset 1 2) ++ offsetRotations (Offset 2 1))
@@ -67,16 +67,16 @@ moveValidForPawn owner move _ _ = destinationOnOffset offset move
 destinationOnOffset :: Offset -> Move -> Bool
 destinationOnOffset offset (p1, p2) = offset == (offsetFrom p1 p2)
 
-destinationOnRay :: Offset -> MoveValidator
-destinationOnRay delta move board turn = destinationIsOnLine delta (fst move) 8 move board turn
+destinationOnRay :: Offset -> Move -> Board -> Bool
+destinationOnRay delta move board = destinationIsOnLine delta (fst move) 8 move board
 
-destinationIsOnLine :: Offset -> Position -> Int -> MoveValidator
-destinationIsOnLine delta curr dist (p1, p2) board turn
+destinationIsOnLine :: Offset -> Position -> Int -> Move -> Board -> Bool
+destinationIsOnLine delta curr dist (p1, p2) board
     | not $ validPosition p1 = False
     | curr == p2 = True
     | dist == 0 = False
     | isJust (pieceAt board p1) && curr /= p1 = False
-    | otherwise = destinationIsOnLine delta (addOffset curr delta) (dist - 1) (p1, p2) board turn
+    | otherwise = destinationIsOnLine delta (addOffset curr delta) (dist - 1) (p1, p2) board
 
 movePiece :: PieceMover
 movePiece (p1, p2) board _
