@@ -10,8 +10,8 @@ import Piece
 import GameState
 
 type Move = (Position, Position)
-type PieceMover = Move -> Board -> Board
-type MoveValidator = Move -> Board -> Bool
+type PieceMover = Move -> Board -> Int -> Board
+type MoveValidator = Move -> Board -> Int -> Bool
 
 applyMove :: GameState -> Move -> Maybe GameState
 applyMove (GameState board currPlayer turn) (p1, p2) =
@@ -25,7 +25,7 @@ applyMove (GameState board currPlayer turn) (p1, p2) =
                 let piece2 = pieceAt board p2
                 mover <- getMover piece piece2
 
-                return $ mover (p1, p2) board
+                return $ mover (p1, p2) board turn
 
             return $ GameState newBoard (otherColor currPlayer) (turn + 1)
 
@@ -38,7 +38,7 @@ applyMove (GameState board currPlayer turn) (p1, p2) =
 
             where
                 getMoveMover :: Color -> PieceType -> Maybe PieceMover
-                getMoveMover c pt = if validator (p1, p2) board then return movePiece else Nothing
+                getMoveMover c pt = if validator (p1, p2) board turn then return movePiece else Nothing
                     where
                         validator :: MoveValidator
                         validator = case pt of
@@ -46,19 +46,19 @@ applyMove (GameState board currPlayer turn) (p1, p2) =
                             Bishop -> moveValidForBishop
                             Knight -> moveValidForKnight
                             Pawn -> moveValidForPawn c
-                            _ -> (\_ _ -> False)
+                            _ -> (\_ _ _ -> False)
 
 moveValidForRook :: MoveValidator
-moveValidForRook move board = any (\delta -> destinationOnRay delta move board) (offsetRotations (Offset 1 0))
+moveValidForRook move board turn = any (\delta -> destinationOnRay delta move board turn) (offsetRotations (Offset 1 0))
 
 moveValidForBishop :: MoveValidator
-moveValidForBishop move board = any (\delta -> destinationOnRay delta move board) (offsetRotations (Offset 1 1))
+moveValidForBishop move board turn = any (\delta -> destinationOnRay delta move board turn) (offsetRotations (Offset 1 1))
 
 moveValidForKnight :: MoveValidator
-moveValidForKnight move board = any (\delta -> destinationOnOffset delta move) (offsetRotations (Offset 1 2) ++ offsetRotations (Offset 2 1))
+moveValidForKnight move board turn = any (\delta -> destinationOnOffset delta move) (offsetRotations (Offset 1 2) ++ offsetRotations (Offset 2 1))
 
 moveValidForPawn :: Color -> MoveValidator
-moveValidForPawn owner move _ = destinationOnOffset offset move
+moveValidForPawn owner move _ _ = destinationOnOffset offset move
     where
         offset = case owner of
             White -> Offset 0 1
@@ -68,18 +68,18 @@ destinationOnOffset :: Offset -> Move -> Bool
 destinationOnOffset offset (p1, p2) = offset == (offsetFrom p1 p2)
 
 destinationOnRay :: Offset -> MoveValidator
-destinationOnRay delta move board = destinationIsOnLine delta (fst move) 8 move board
+destinationOnRay delta move board turn = destinationIsOnLine delta (fst move) 8 move board turn
 
 destinationIsOnLine :: Offset -> Position -> Int -> MoveValidator
-destinationIsOnLine delta curr dist (p1, p2) board
+destinationIsOnLine delta curr dist (p1, p2) board turn
     | not $ validPosition p1 = False
     | curr == p2 = True
     | dist == 0 = False
     | isJust (pieceAt board p1) && curr /= p1 = False
-    | otherwise = destinationIsOnLine delta (addOffset curr delta) (dist - 1) (p1, p2) board
+    | otherwise = destinationIsOnLine delta (addOffset curr delta) (dist - 1) (p1, p2) board turn
 
 movePiece :: PieceMover
-movePiece (p1, p2) board
+movePiece (p1, p2) board _
     | isNothing (pieceAt board p1) = error "Trying to move an empty piece"
     | isJust (pieceAt board p2) = error "Trying to move an occupied square"
     | otherwise = let
