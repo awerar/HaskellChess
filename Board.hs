@@ -1,14 +1,15 @@
 module Board (
-    Board, startBoard, pieceAt, replaceSquare
+    Board, startBoard, testBoard, pieceAt, replaceSquare
 ) where
 
 import Piece
 import Position
+import Data.List
 
 type Board = [[Maybe Piece]]
 
-startBoardRC :: Board
-startBoardRC = reverse $
+startBoard :: Board
+startBoard = transpose $ reverse $
     [
         map (\x -> Just $ Piece Black x Nothing) [Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook],
         replicate 8 $ Just $ Piece Black Pawn Nothing
@@ -19,11 +20,7 @@ startBoardRC = reverse $
         map (\x -> Just $ Piece White x Nothing) [Rook, Knight, Bishop, King, Queen, Bishop, Knight, Rook]
     ]
 
-startBoardCR :: Board
-startBoardCR = [[startBoardRC !! r !! c | r <- [0..7]] | c <- [0..7]]
-
-startBoard :: Board
-startBoard = startBoardCR
+testBoard = replaceSquare (replaceSquare startBoard (Position 1 0) Nothing) (Position 2 0) Nothing
 
 pieceAt :: Board -> Position -> Maybe Piece
 pieceAt board (Position c r) = (board !! c) !! r

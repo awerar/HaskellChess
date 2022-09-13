@@ -9,8 +9,9 @@ import Position
 import GameState
 
 displayGameState :: GameState -> String
-displayGameState (GameState board Black _) = displayBoard board
-displayGameState (GameState board White _) = unlines $ reverse $ lines $ displayBoard board
+displayGameState (GameState board _ _) = displayBoard board
+--displayGameState (GameState board Black _) = displayBoard board
+--displayGameState (GameState board White _) = unlines $ reverse $ lines $ displayBoard board
 
 displayBoard :: Board -> String
 displayBoard board = unlines $ [coordinateRow] ++ displayRows 0 ++ [coordinateRow]

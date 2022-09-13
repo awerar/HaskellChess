@@ -1,14 +1,17 @@
 module Position(
-    Position(..), Offset(..), validPosition, parsePosition, posAsPair, offsetFrom, addOffset, offsetRotations
+    Position(..), Offset(..), validPosition, parsePosition, posAsPair, offsetFrom, addOffset, offsetRotations, offsetAsPair
 ) where
 
 import Data.Char (chr, ord)
 
-data Position = Position Int Int deriving Eq
+data Position = Position Int Int deriving (Show, Eq)
 data Offset = Offset Int Int deriving (Show, Eq)
 
 posAsPair :: Position -> (Int, Int)
 posAsPair (Position x y) = (x, y)
+
+offsetAsPair :: Offset -> (Int, Int)
+offsetAsPair (Offset x y) = (x, y)
 
 offsetFrom :: Position -> Position -> Offset
 offsetFrom (Position x1 y1) (Position x2 y2) = Offset (x2 - x1) (y2 - y1)
