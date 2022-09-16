@@ -1,5 +1,5 @@
 module Move(
-    getMove, applyMove, Move
+    getMove, applyMove, getAllValidMoves, Move
 ) where
 
 import Position
@@ -12,6 +12,34 @@ import GameState
 type Move = (Position, Position)
 type PieceMover = Move -> Board -> Int -> Board
 type MoveValidator = Move -> Board -> Int -> Bool
+
+getAllValidMoves :: GameState -> [(Move, GameState)]
+getAllValidMoves (GameState board player turn) = undefined
+    where
+        ownedPieces :: [(Piece, Position)]
+        ownedPieces = [let p = Position x y in (fromJust (pieceAt board p), p) | 
+            x <- [0..7], 
+            y <- [0..7]
+            , let r = do
+                        piece <- pieceAt board $ Position x y
+                        return $ pieceHasColor piece player
+                    in isJust r && fromJust r]
+
+getPiecePossibleOffsets :: Piece -> [Offset]
+getPiecePossibleOffsets (Piece col Pawn _) = [
+        Offset 0 dir,
+        Offset 0 (2 * dir),
+        Offset 1 dir,
+        Offset (-1) dir
+    ]
+    where
+        dir = directionOfPawn col
+
+getPiecePossibleOffsets (Piece _ Rook _) = concat [offsetRotations $ Offset d 0 | d <- [1..7]]
+getPiecePossibleOffsets (Piece _ Bishop _) = concat [offsetRotations $ Offset d d | d <- [1..7]]
+getPiecePossibleOffsets (Piece c Queen t) = getPiecePossibleOffsets (Piece c Rook t) ++ (getPiecePossibleOffsets (Piece c Bishop t))
+getPiecePossibleOffsets (Piece _ Knight _) = offsetRotations (Offset 1 2) ++ offsetRotations (Offset 2 1)
+getPiecePossibleOffsets (Piece _ King _) = offsetRotations (Offset 1 0) ++ offsetRotations (Offset 0 1)
 
 applyMove :: GameState -> Move -> Maybe GameState
 applyMove (GameState board currPlayer turn) (p1, p2) =
