@@ -1,5 +1,5 @@
 module Move(
-    getMove, applyMove, getAllValidMoves, Move
+    getMove, applyMoveCheck, getAllValidMoves, applyMove, Move
 ) where
 
 import Position
@@ -14,7 +14,7 @@ type PieceMover = Move -> Board -> Int -> Board
 type MoveValidator = Move -> Board -> Int -> Bool
 
 getAllValidMoves :: GameState -> [(Move, GameState)]
-getAllValidMoves (GameState board player turn) = undefined
+getAllValidMoves (GameState board player turn) = concat $ map getValidMovesFor ownedPieces
     where
         ownedPieces :: [(Piece, Position)]
         ownedPieces = [let p = Position x y in (fromJust (pieceAt board p), p) | 
@@ -24,6 +24,12 @@ getAllValidMoves (GameState board player turn) = undefined
                         piece <- pieceAt board $ Position x y
                         return $ pieceHasColor piece player
                     in isJust r && fromJust r]
+
+        getValidMovesFor :: (Piece, Position) -> [(Move, GameState)]
+        getValidMovesFor (piece, pos) = [(move, fromJust newGameState) | dest <- possibleDestinations, let move = (pos, dest), let newGameState = applyMove (GameState board player turn) move, isJust newGameState]
+            where
+                possibleDestinations :: [Position]
+                possibleDestinations = filter validPosition $ map (\off -> addOffset pos off) $ getPiecePossibleOffsets piece
 
 getPiecePossibleOffsets :: Piece -> [Offset]
 getPiecePossibleOffsets (Piece col Pawn _) = [
@@ -40,6 +46,16 @@ getPiecePossibleOffsets (Piece _ Bishop _) = concat [offsetRotations $ Offset d 
 getPiecePossibleOffsets (Piece c Queen t) = getPiecePossibleOffsets (Piece c Rook t) ++ (getPiecePossibleOffsets (Piece c Bishop t))
 getPiecePossibleOffsets (Piece _ Knight _) = offsetRotations (Offset 1 2) ++ offsetRotations (Offset 2 1)
 getPiecePossibleOffsets (Piece _ King _) = offsetRotations (Offset 1 0) ++ offsetRotations (Offset 0 1)
+
+applyMoveCheck :: GameState -> Move -> Maybe GameState
+applyMoveCheck gameState move = do
+    newGameState <- applyMove gameState move
+    if hasCheck newGameState then Nothing
+    else return newGameState
+    
+    where
+        hasCheck :: GameState -> Bool
+        hasCheck checkedGameState = any (\x -> gameOver $ snd x) (getAllValidMoves checkedGameState)
 
 applyMove :: GameState -> Move -> Maybe GameState
 applyMove (GameState board currPlayer turn) (p1, p2) =
@@ -63,8 +79,8 @@ applyMove (GameState board currPlayer turn) (p1, p2) =
             case (piece1, piece2) of
                 (Piece c pt lm, Nothing) -> getMoveMover c pt lm
                 (Piece c1 pt1 lm1, Just (Piece c2 pt2 lm2)) ->
-                    if c1 == c2 then
-                        if pt1 == Rook && pt2 == King && isNothing lm1 && isNothing lm2 then Just moveCastle else Nothing
+                    if c1 == c2 then Nothing
+                        {--if pt1 == Rook && pt2 == King && isNothing lm1 && isNothing lm2 then Just moveCastle else Nothing--}
                     else getCaptureMover c1 pt1 lm1
 
             where

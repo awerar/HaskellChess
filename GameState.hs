@@ -10,4 +10,8 @@ import Position
 data GameState = GameState { currBoard :: Board, currPlayer :: Color, currTurn :: Int }
 
 gameOver :: GameState -> Bool
-gameOver board = False
+gameOver (GameState board player turn) = not $ any isKing (concat board)
+    where
+        isKing :: Maybe Piece -> Bool
+        isKing Nothing = False
+        isKing (Just (Piece c pt _)) = pt == King && c == player
